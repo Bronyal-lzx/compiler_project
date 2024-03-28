@@ -74,7 +74,7 @@ let d[10]:int = {0}; // declear a variable of integer array and initialize it wi
 The grammar is defined as follows.
  ```
 varDeclStmt := < let > (varDecl | varDef) < ; >   
-varDecl := id < : > type |  id < [ > num < ] >< : > type | id |  id < [ > num < ] >
+ c cvarDecl := id < : > type |  id < [ > num < ] >< : > type | id |  id < [ > num < ] >
 varDef :=  id < : > type < = > rightVal | id < = > rightVal  //primitive type
          | id < [ > num < ] >< : > type < = > < { > rightVal (< , > rightVal)* | ϵ < } > | id < [ > num < ] > < = > < { > rightVal (< , > rightVal)* | ϵ < } > //array
 type := nativeType | structType
