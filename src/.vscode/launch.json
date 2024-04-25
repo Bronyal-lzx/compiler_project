@@ -1,13 +1,14 @@
 {
     "version": "0.2.0",
     "configurations": [
+
       {
         "name": "(gdb) Launch",
         "type": "cppdbg",
         "request": "launch",
         "program": "${workspaceFolder}/compiler",
         "args": [
-          "${workspaceFolder}/tests/10_comprehensive_case.tea"
+          "${workspaceFolder}/tests/00_newtest.tea"
         ],
         "cwd": "${workspaceFolder}",
         "environment": [],

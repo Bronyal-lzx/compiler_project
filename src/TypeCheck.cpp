@@ -9,11 +9,14 @@ typeMap g_token2Type;  //全局变量类型维护
 // local token ids to type, since func param can override global param
 typeMap funcparam_token2Type; //函数参数对应类型
 vector<typeMap*> local_token2Type;  //总的局部变量类型
-
+typeMap loacl_name2Type;  //局部变量类型
+aA_type currentfunreturntype; //当前函数返回类型
 
 paramMemberMap func2Param;   // 函数名与其中所有变量的map
 paramMemberMap struct2Members; // 结构体与其中所有变量的map
 
+// 定义新的映射
+std::unordered_map<std::string, bool> func2Defined;
 
 // private util functions
 void error_print(std::ostream& out, A_pos p, string info)
@@ -154,6 +157,7 @@ void check_VarDecl(std::ostream& out, aA_varDeclStmt vd)
         return;
     string name;
     tc_type varType = new tc_type_;
+
     if (vd->kind == A_varDeclStmtType::A_varDeclKind){
         // decl only
         aA_varDecl vdecl = vd->u.varDecl;
@@ -162,19 +166,30 @@ void check_VarDecl(std::ostream& out, aA_varDeclStmt vd)
             /* fill code here*/
             //判断新变量名是否在，若已存在则报错，不存在则向map中新增
             if (g_token2Type.find(name) != g_token2Type.end() ||
-                (!local_token2Type.empty() && local_token2Type.back()->find(name) != local_token2Type.back()->end())) {
+                (!local_token2Type.empty() && !checklocal_token2Type(name))) {
                 error_print(out, vdecl->pos, "Variable name conflict: " + name);
             }
             else if(!check_struct_declared(vdecl)){
                 error_print(out, vdecl->pos, "Struct not defined.");
             }
             else {
-                varType->type = vdecl->u.declScalar->type;
-                varType->isVarArrFunc = 0;
-                if (!local_token2Type.empty()) {
-                    (*local_token2Type.back())[name] = varType;
-                } else {
-                    g_token2Type[name] = varType;
+                if(vdecl->u.declScalar->type == NULL){
+                    varType->isVarArrFunc=0;
+                    varType->type = nullptr;
+                    if (!local_token2Type.empty()) {
+                        (*local_token2Type.back())[name] = varType;
+                    } else {
+                        g_token2Type[name] = varType;
+                    }
+                }
+                else{
+                    varType->type = vdecl->u.declScalar->type;
+                    varType->isVarArrFunc = 0;
+                    if (!local_token2Type.empty()) {
+                        (*local_token2Type.back())[name] = varType;
+                    } else {
+                        g_token2Type[name] = varType;
+                    }
                 }
             }
 
@@ -183,15 +198,26 @@ void check_VarDecl(std::ostream& out, aA_varDeclStmt vd)
             /* fill code here*/
              //判断新数组名是否在，若已存在则报错，不存在则向map中新增
             if (g_token2Type.find(name) != g_token2Type.end() ||
-                (!local_token2Type.empty() && local_token2Type.back()->find(name) != local_token2Type.back()->end())) {
+                (!local_token2Type.empty() && !checklocal_token2Type(name))) {
                 error_print(out, vdecl->pos, "Array name conflict: " + name);
             } else {
-                varType->type = vdecl->u.declScalar->type;
-                varType->isVarArrFunc = 1;
-                if (!local_token2Type.empty()) {
-                    (*local_token2Type.back())[name] =  varType;
-                } else {
-                    g_token2Type[name] =  varType;
+                if(vdecl->u.declArray->type == NULL){
+                    varType->isVarArrFunc=1;
+                    varType->type = nullptr;
+                    if (!local_token2Type.empty()) {
+                        (*local_token2Type.back())[name] = varType;
+                    } else {
+                        g_token2Type[name] = varType;
+                    }
+                }
+                else{
+                    varType->type = vdecl->u.declScalar->type;
+                    varType->isVarArrFunc = 1;
+                    if (!local_token2Type.empty()) {
+                        (*local_token2Type.back())[name] =  varType;
+                    } else {
+                        g_token2Type[name] =  varType;
+                    }
                 }
             }
             }
@@ -205,9 +231,18 @@ void check_VarDecl(std::ostream& out, aA_varDeclStmt vd)
             //定义标量变量
             auto rValType = check_ArithExpr(out, vdef->u.defScalar->val->u.arithExpr)->type;
             if (g_token2Type.find(name) != g_token2Type.end() ||
-            (!local_token2Type.empty() && local_token2Type.back()->find(name) != local_token2Type.back()->end())) {
+            (!local_token2Type.empty() && !checklocal_token2Type(name))) {
                 error_print(out, vdef->pos, "Variable " + name + " already defined in this scope!");
             } 
+            else if(vdef->u.defScalar->type == nullptr){
+                varType->type=rValType;
+                varType->isVarArrFunc = 0;
+                if (!local_token2Type.empty()) {
+                    (*local_token2Type.back())[name] = varType;
+                } else {
+                    g_token2Type[name] = varType;
+                }
+            }
             else if(!comp_aA_type(vdef->u.defScalar->type,rValType)){
                 error_print(out, vd->pos, name+ "Declared type dosenot match the type of rightvalue");
                 }
@@ -225,16 +260,22 @@ void check_VarDecl(std::ostream& out, aA_varDeclStmt vd)
             name = *vdef->u.defArray->id;
             /* fill code here, allow omited type */
             //定义数组变量
-            auto rValType = check_ArithExpr(out, vdef->u.defScalar->val->u.arithExpr)->type;
+        
+            int arraylen = vdef->u.defArray->len;
+            auto vals = vdef->u.defArray->vals;
+            if(arraylen != vals.size()){
+                error_print(out, vd->pos, "Array length not equal the number of values");
+            }
+            auto rValType = check_ArithExpr(out, vdef->u.defArray->vals[0]->u.arithExpr)->type;
             if (g_token2Type.find(name) != g_token2Type.end() ||
-            (!local_token2Type.empty() && local_token2Type.back()->find(name) != local_token2Type.back()->end())) {
+            (!local_token2Type.empty() && !checklocal_token2Type(name))) {
                 error_print(out, vdef->pos, "Variable " + name + " already defined in this scope!");
             } 
-            else if(!comp_aA_type(vdef->u.defScalar->type,rValType)){
+            else if(!comp_aA_type(vdef->u.defArray->type,rValType)){
                 error_print(out, vd->pos, name+ "Declared type dosenot match the type of rightvalue");
                 }
             else{
-                varType->type = vdef->u.defScalar->type;
+                varType->type = vdef->u.defArray->type;
                 varType->isVarArrFunc = 1;
                 // For scalar variable definitions, infer type if omitted and register the variable
                 if (!local_token2Type.empty()) {
@@ -316,6 +357,10 @@ void check_FnDef(std::ostream& out, aA_fnDef fd)
     // should match if declared
     check_FnDecl(out, fd->fnDecl);
     string fnname = *fd->fnDecl->id;
+    if(func2Defined.find(fnname)!=func2Defined.end()){
+        error_print(out, fd->pos, "Function already defined");
+        return;
+    }
     funcparam_token2Type.clear();
     // add params to local tokenmap, func params override global ones
     for (aA_varDecl vd : fd->fnDecl->paramDecl->varDecls)
@@ -326,18 +371,21 @@ void check_FnDef(std::ostream& out, aA_fnDef fd)
     }
     local_token2Type.push_back(&funcparam_token2Type);
     func2Param[fnname] = &(fd->fnDecl->paramDecl->varDecls);
+    func2Defined[fnname] = true;
     /* fill code here */
+    currentfunreturntype = fd->fnDecl->type;
     for (aA_codeBlockStmt stmt : fd->stmts)
     {
         check_CodeblockStmt(out, stmt);
         // return value type should match
         /* fill code here */
-        // if(stmt->kind == A_codeBlockStmtType::A_returnStmtKind){
-        //     if(!comp_tc_type(func2retType[fnname],tc_Type(stmt->u.returnStmt->retVal->kind,2))){
-
-        //     }
-        // }        
+        if(stmt->kind == A_codeBlockStmtType::A_returnStmtKind){
+            if(!comp_aA_type(func2retType[fnname]->type,check_rightVal(out,stmt->u.returnStmt->retVal)->type)){
+                error_print(out, stmt->pos, "Return type mismatch");
+            }
+        }        
     }
+    currentfunreturntype = nullptr;
     funcparam_token2Type.clear();
     if (local_token2Type.size() != 0)local_token2Type.pop_back();
  
@@ -393,6 +441,7 @@ void check_AssignStmt(std::ostream& out, aA_assignStmt as){
                 return;
             }
             leftValType = nameToType(out, as->pos, name);
+    
         }
             break;
         case A_leftValType::A_arrValKind:{
@@ -428,6 +477,7 @@ void check_AssignStmt(std::ostream& out, aA_assignStmt as){
             funcparam_token2Type[name]->type = deduced_type->type;
         else if (g_token2Type.find(name) != g_token2Type.end())
             g_token2Type[name]->type = deduced_type->type;
+        return;
     }
     if (!comp_tc_type(leftValType, deduced_type)){
         error_print(out, as->pos, "leftval and rightval type mismatch");
@@ -446,7 +496,7 @@ void check_ArrayExpr(std::ostream& out, aA_arrayExpr ae){
         error_print(out, ae->arr->pos, "Array" + name + "not declared!");
         return;
     }
-    if (arrayType->isVarArrFunc != 1) { // Assuming 1 signifies array type
+    if (arrayType->isVarArrFunc != 1) { 
         error_print(out, ae->arr->pos, "Variable " + name + " is not an array!");
         return;
     }
@@ -514,20 +564,20 @@ void check_IfStmt(std::ostream& out, aA_ifStmt is){
         return;
     check_BoolExpr(out, is->boolExpr);
     /* fill code here, take care of variable scope */
-    local_token2Type.push_back(&funcparam_token2Type);
-    funcparam_token2Type.clear();
+    loacl_name2Type.clear();
+    local_token2Type.push_back(&loacl_name2Type);
     for(aA_codeBlockStmt s : is->ifStmts){
         check_CodeblockStmt(out, s);
     }
     local_token2Type.pop_back();
-    funcparam_token2Type.clear();
+    loacl_name2Type.clear();
     /* fill code here */   
-    local_token2Type.push_back(&funcparam_token2Type);
+    local_token2Type.push_back(&loacl_name2Type);
     for(aA_codeBlockStmt s : is->elseStmts){
         check_CodeblockStmt(out, s);
     }   
     local_token2Type.pop_back();
-    funcparam_token2Type.clear();
+    loacl_name2Type.clear();
     /* fill code here */
     return;
 }
@@ -629,10 +679,6 @@ tc_type check_ExprUnit(std::ostream& out, aA_exprUnit eu){
             ret = check_ArithExpr(out, eu->u.arithExpr);
         }
             break;
-        case A_exprUnitType::A_arithUExprKind:{
-            ret = check_ExprUnit(out, eu->u.arithUExpr->expr);
-        }
-            break;
     }
     return ret;
 }
@@ -713,6 +759,9 @@ void check_CallStmt(std::ostream& out, aA_callStmt cs){
 void check_ReturnStmt(std::ostream& out, aA_returnStmt rs){
     if(!rs)
         return;
+    if(currentfunreturntype!=nullptr&& !comp_aA_type(currentfunreturntype,check_rightVal(out,rs->retVal)->type)){
+        error_print(out, rs->pos, "Return type mismatch");
+    }
     return;
 }
 
@@ -768,6 +817,9 @@ tc_type check_rightVal(std::ostream &out, aA_rightVal rightVal)
 
 bool check_struct_declared(aA_varDecl varDecl) {   //检查声明的struct是否存在
     if(varDecl->kind == A_varDeclType::A_varDeclScalarKind){
+        if(varDecl->u.declScalar->type == nullptr){
+            return true;
+        }
         if(varDecl->u.declScalar->type->type == A_dataType::A_structTypeKind){
             if(struct2Members.find(*(varDecl->u.declScalar->type->u.structType)) == struct2Members.end()){
                 return false;
@@ -776,6 +828,9 @@ bool check_struct_declared(aA_varDecl varDecl) {   //检查声明的struct是否
         return true;
     }
     else if(varDecl->kind == A_varDeclType::A_varDeclArrayKind){
+        if(varDecl->u.declArray->type == nullptr){
+            return true;
+        }
         if(varDecl->u.declArray->type->type == A_dataType::A_structTypeKind){
             if(struct2Members.find(*(varDecl->u.declArray->type->u.structType)) == struct2Members.end()){
                 return false;
@@ -783,4 +838,13 @@ bool check_struct_declared(aA_varDecl varDecl) {   //检查声明的struct是否
         }
         return true;
     }
+}
+
+bool checklocal_token2Type(string name){
+    for (int i = local_token2Type.size() - 1; i >= 0; --i) {
+        typeMap* currentScope = local_token2Type[i];
+        if(currentScope->find(name) != currentScope->end())
+            return false;
+    }
+    return true;
 }

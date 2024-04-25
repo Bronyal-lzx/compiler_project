@@ -39,6 +39,7 @@ string extractVariableName(aA_varDecl varDecl);
 tc_type check_rightVal(std::ostream &out, aA_rightVal rightVal);
 tc_type nameToType(std::ostream &out, A_pos pos, string id);
 bool check_struct_declared(aA_varDecl varDecl);
+bool checklocal_token2Type(string name);
 struct tc_type_{
     aA_type type;
     uint isVarArrFunc; // 0 for scalar, 1 for array, 2 for function
