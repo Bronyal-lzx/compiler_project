@@ -5,171 +5,162 @@
 extern A_pos pos;
 extern A_program root;
 
+// extern int yydebug=1;
+
 extern int yylex(void);
 extern "C"{
 extern void yyerror(char *s); 
 extern int  yywrap();
-// extern int yydebug=1;
 }
 
 %}
 
-// TODO:
-// your parser
-
 %union {
-  //step1：对应TeaplAst.h中的类型补充
-  A_pos pos;  //1
-  A_type type;  //2
-  A_varDecl varDecl;  //3
-  A_varDef varDef;  //4
-  A_rightVal rightVal;  //5
-  A_arithExpr arithExpr;  //6
-  A_boolExpr boolExpr;  //7
-  A_arithBiOpExpr arithBiOpExpr;  //8
-  A_arithUExpr arithUExpr;//9
-  A_exprUnit exprUnit;  //10
-  A_fnCall fnCall;  //11
-  A_indexExpr indexExpr;  //12
-  A_arrayExpr arrayExpr;  //13
-  A_memberExpr memberExpr;  //14
-  A_boolUnit boolUnit;  //15
-  A_boolBiOpExpr boolBiOpExpr;  //16
-  A_boolUOpExpr boolUOpExpr;  //17
-  A_comExpr comExpr;  //18
-  A_leftVal leftVal;  //19
-  A_assignStmt assignStmt;  //20
-  A_rightValList rightValList;  //21
-  A_varDefScalar varDefScalar;  //22
-  A_varDefArray varDefArray;  //23
-  A_varDeclScalar varDeclScalar;  //24
-  A_varDeclArray varDeclArray;  //25
-  A_varDeclStmt varDeclStmt;  //26
-  A_varDeclList varDeclList;  //27
-  A_structDef structDef;  //28
-  A_paramDecl paramDecl;  //29
-  A_fnDecl fnDecl;  //30
-  A_fnDef fnDef;  //31
-  A_codeBlockStmt codeBlockStmt;  //32
-  A_ifStmt ifStmt;  //33
-  A_whileStmt whileStmt;  //34
-  A_fnDeclStmt fnDeclStmt;  //35
-  A_callStmt callStmt;  //36
-  A_returnStmt returnStmt;  //37
-  A_programElement programElement;  //38
-  A_codeBlockStmtList codeBlockStmtList;  //39
-  A_programElementList programElementList;  //40
-  A_program program;  //41
-  A_tokenId tokenId;  //42
-  A_tokenNum tokenNum;  //43
+  A_pos pos;
+  A_type type;
+  A_varDecl varDecl;
+  A_varDef varDef;
+  A_rightVal rightVal;
+  A_arithExpr arithExpr;
+  A_boolExpr boolExpr;
+  A_arithBiOpExpr arithBiOpExpr;
+  A_arithUExpr arithUExpr;
+  A_exprUnit exprUnit;
+  A_fnCall fnCall;
+  A_indexExpr indexExpr;
+  A_arrayExpr arrayExpr;
+  A_memberExpr memberExpr;
+  A_boolUnit boolUnit;
+  A_boolBiOpExpr boolBiOpExpr;
+  A_boolUOpExpr boolUOpExpr;
+  A_comExpr comExpr;
+  A_leftVal leftVal;
+  A_assignStmt assignStmt;
+  A_rightValList rightValList;
+  A_varDefScalar varDefScalar;
+  A_varDefArray varDefArray;
+  A_varDeclScalar varDeclScalar;
+  A_varDeclArray varDeclArray;
+  A_varDeclStmt varDeclStmt;
+  A_varDeclList varDeclList;
+  A_structDef structDef;
+  A_paramDecl paramDecl;
+  A_fnDecl fnDecl;
+  A_fnDef fnDef;
+  A_codeBlockStmt codeBlockStmt;
+  A_ifStmt ifStmt;
+  A_whileStmt whileStmt;
+  A_fnDeclStmt fnDeclStmt;
+  A_callStmt callStmt;
+  A_returnStmt returnStmt;
+  A_programElement programElement;
+  A_codeBlockStmtList codeBlockStmtList;
+  A_programElementList programElementList;
+  A_program program;
+  A_tokenId tokenId;
+  A_tokenNum tokenNum;
 }
 
-//step2:定义对应的token
-%token <pos> ADD  //加+
-%token <pos> SUB  //减-
-%token <pos> MUL  //乘*
-%token <pos> DIV  //除/
-%token <pos> SEMICOLON //分号;
-%token <pos> LPAREN //左括号 (
-%token <pos> RPAREN //右括号 )
-%token <pos> LEFT_BRACKET  //左方括号 [
-%token <pos> RIGHT_BRACKET //右方括号 ]
-%token <pos> LBRACE //左大括号 {
-%token <pos> RBRACE //右大括号 }
-%token <pos> ASSIGN //赋值符号 =
-%token <pos> EQ //等于 ==
-%token <pos> NEQ //不等于 !=
-%token <pos> LT //小于 <
-%token <pos> GT //大于 >
-%token <pos> LE //小于等于 <=
-%token <pos> GE //大于等于 >=
-%token <pos> NOT// 逻辑非操作符 !
-%token <pos> IF //if
-%token <pos> ELSE //else
-%token <pos> WHILE //while
-%token <pos> FOR //for
-%token <pos> RETURN //return
-%token <pos> BREAK //break
-%token <pos> LET //let
-%token <pos> COLON //冒号 :
-%token <pos> ARROW //箭头 ->
-%token <pos> COMMA //逗号,
-%token <pos> FN //fn
-%token <pos> CONT //continue
-%token <pos> AND // 逻辑与 &&
-%token <pos> OR // 逻辑或 ||
-%token <pos> INT // int 关键字
-%token <pos> STRUCT // struct 关键字
-%token <pos> DOT // 点操作符 .
-%token <tokenId> ID //标识符
-%token <tokenNum> NUM //数字
+%token <pos> ADD 
+%token <pos> SUB 
+%token <pos> MUL 
+%token <pos> DIV 
+%token <pos> SEMICOLON
+%token <pos> LEFT_PARENT 
+%token <pos> RIGHT_PARENT 
+%token <pos> LEFT_SQUARE_BRACKET 
+%token <pos> RIGHT_SQUARE_BRACKET 
+%token <pos> LEFT_BRACE 
+%token <pos> RIGHT_BRACE
+%token <pos> GREATER 
+%token <pos> NOT_LESS_THEN 
+%token <pos> LESS
+%token <pos> NOT_GREATER_THEN 
+%token <pos> EQUAL 
+%token <pos> NOT_EQUAL 
+%token <pos> ASSIGN 
+%token <pos> COMMA 
+%token <pos> COLON 
+%token <pos> LET 
+%token <pos> POINT 
+%token <pos> RETURN
+%token <pos> AND 
+%token <pos> OR 
+%token <pos> NOT 
+%token <pos> FN 
+%token <pos> IF 
+%token <pos> ELSE 
+%token <pos> WHILE 
+%token <pos> BREAK 
+%token <pos> CONTINUE 
+%token <pos> RIGHT_ARROW 
+%token <pos> INT 
+%token <pos> STRUCT 
+%token <tokenId> Id 
+%token <tokenNum> Num
 
-//step3：根据union中的类，其中pos，tokenid，tokennum已定义，所以减去
-%type <type> Type //2
-%type <varDecl> VarDecl //3
-%type <varDef> VarDef //4
-%type <rightVal> RightVal //5
-%type <arithExpr> ArithExpr //6
-%type <boolExpr> BoolExpr //7
-%type <arithBiOpExpr> ArithBiOpExpr //8
-%type <arithUExpr> ArithUExpr //9
-%type <exprUnit> ExprUnit //10
-%type <fnCall> FnCall //11
-%type <indexExpr> IndexExpr //12
-%type <arrayExpr> ArrayExpr //13
-%type <memberExpr> MemberExpr //14
-%type <boolUnit> BoolUnit //15
-%type <boolBiOpExpr> BoolBiOpExpr //16
-%type <boolUOpExpr> BoolUOpExpr //17
-%type <comExpr> ComExpr //18
-%type <leftVal> LeftVal //19
-%type <assignStmt> AssignStmt //20
-%type <rightValList> RightValList //21
-%type <varDefScalar> VarDefScalar //22
-%type <varDefArray> VarDefArray //23
-%type <varDeclScalar> VarDeclScalar //24
-%type <varDeclArray> VarDeclArray //25
-%type <varDeclStmt> VarDeclStmt //26
-%type <varDeclList> VarDeclList //27
-%type <structDef> StructDef //28
-%type <paramDecl> ParamDecl //29
-%type <fnDecl> FnDecl //30
-%type <fnDef> FnDef //31
-%type <codeBlockStmt> CodeBlockStmt //32
-%type <ifStmt> IfStmt //33
-%type <whileStmt> WhileStmt //34
-%type <fnDeclStmt> FnDeclStmt //35
-%type <callStmt> CallStmt //36
-%type <returnStmt> ReturnStmt //37
-%type <programElement> ProgramElement //38
-%type <codeBlockStmtList> CodeBlockStmtList //39
-%type <programElementList> ProgramElementList //40
-%type <program> Program //41
+%type <type> Type 
+%type <varDecl> VarDecl 
+%type <varDef> VarDef 
+%type <rightVal> RightVal 
+%type <arithExpr> ArithExpr 
+%type <boolExpr> BoolExpr 
+%type <arithBiOpExpr> ArithBiOpExpr 
+%type <arithUExpr> ArithUExpr 
+%type <exprUnit> ExprUnit 
+%type <fnCall> FnCall 
+%type <indexExpr> IndexExpr 
+%type <arrayExpr> ArrayExpr 
+%type <memberExpr> MemberExpr 
+%type <boolUnit> BoolUnit 
+%type <boolBiOpExpr> BoolBiOpExpr 
+%type <boolUOpExpr> BoolUOpExpr 
+%type <comExpr> ComExpr 
+%type <leftVal> LeftVal 
+%type <assignStmt> AssignStmt
+%type <rightValList> RightValList
+%type <varDefScalar> VarDefScalar
+%type <varDefArray> VarDefArray 
+%type <varDeclScalar> VarDeclScalar 
+%type <varDeclArray> VarDeclArray 
+%type <varDeclStmt> VarDeclStmt 
+%type <varDeclList> VarDeclList 
+%type <structDef> StructDef 
+%type <paramDecl> ParamDecl 
+%type <fnDecl> FnDecl 
+%type <fnDef> FnDef 
+%type <codeBlockStmt> CodeBlockStmt 
+%type <ifStmt> IfStmt 
+%type <whileStmt> WhileStmt 
+%type <fnDeclStmt> FnDeclStmt 
+%type <callStmt> CallStmt 
+%type <returnStmt> ReturnStmt 
+%type <programElement> ProgramElement 
+%type <codeBlockStmtList> CodeBlockStmtList 
+%type <programElementList> ProgramElementList
+%type <program> Program 
 
+%start Program
 %left ADD SUB
 %left MUL DIV
-%left OR
-%left AND
-%start Program
+%left OR AND
 
-// step5：编写yacc规则,大类型下有对应的小类型，最后的小类型可以转换为终结符的连接
 %%                   /* beginning of rules section */
-//  teaplast.h中的所有类型
 
-//2
-Type: INT
-{
+Type:
+INT{
   $$ = A_NativeType($1,A_intTypeKind);
 }
 |
-ID
-{
+Id{
   $$ = A_StructType($1->pos,$1->id);
-}
+};
 
 //3
-VarDecl:VarDeclScalar
-{
+//A_varDecl A_VarDecl_Scalar(A_pos pos, A_varDeclScalar declScalar);
+//A_varDecl A_VarDecl_Array(A_pos pos, A_varDeclArray declArray);
+VarDecl:
+VarDeclScalar{
   $$ = A_VarDecl_Scalar($1->pos,$1);
 }
 |
@@ -178,7 +169,12 @@ VarDeclArray{
 };
 
 
+
+
+
 //4
+//A_varDef A_VarDef_Scalar(A_pos pos, A_varDefScalar defScalar);
+//A_varDef A_VarDef_Array(A_pos pos, A_varDefArray defArray);
 VarDef:
 VarDefScalar{
   $$ = A_VarDef_Scalar($1->pos,$1);
@@ -189,6 +185,8 @@ VarDefArray{
 };
 
 //5
+//A_rightVal A_ArithExprRVal(A_pos pos, A_arithExpr arithExpr);
+//A_rightVal A_BoolExprRVal(A_pos pos, A_boolExpr boolExpr);
 RightVal:
 ArithExpr{
   $$ = A_ArithExprRVal($1->pos,$1);
@@ -199,6 +197,8 @@ BoolExpr{
 };
 
 //6
+//A_arithExpr A_ArithBiOp_Expr(A_pos pos, A_arithBiOpExpr arithBiOpExpr);
+//A_arithExpr A_ExprUnit(A_pos pos, A_exprUnit exprUnit);
 ArithExpr:
 ArithBiOpExpr{
   $$ = A_ArithBiOp_Expr($1->pos,$1);
@@ -208,8 +208,9 @@ ExprUnit{
   $$ = A_ExprUnit($1->pos,$1);
 };
 
-
 //7
+//A_boolExpr A_BoolBiOp_Expr(A_pos pos, A_boolBiOpExpr boolBiOpExpr);
+//A_boolExpr A_BoolExpr(A_pos pos, A_boolUnit boolUnit);
 BoolExpr:
 BoolBiOpExpr{
   $$ = A_BoolBiOp_Expr($1->pos,$1);
@@ -219,8 +220,8 @@ BoolUnit{
   $$ = A_BoolExpr($1->pos,$1);
 };
 
-
 //8
+//A_arithBiOpExpr A_ArithBiOpExpr(A_pos pos, A_arithBiOp op, A_arithExpr left, A_arithExpr right);
 ArithBiOpExpr:
 ArithExpr ADD ArithExpr{
   $$ = A_ArithBiOpExpr($1->pos,A_add,$1,$3);
@@ -239,23 +240,31 @@ ArithExpr DIV ArithExpr{
 };
 
 //9
+//A_arithUExpr A_ArithUExpr(A_pos pos, A_arithUOp op, A_exprUnit expr);
 ArithUExpr:
 SUB ExprUnit{
   $$ = A_ArithUExpr($1,A_neg,$2);
 };
 
 //10
+//A_exprUnit A_NumExprUnit(A_pos pos, int num);
+//A_exprUnit A_IdExprUnit(A_pos pos, char* id);
+//A_exprUnit A_ArithExprUnit(A_pos pos, A_arithExpr arithExpr);
+//A_exprUnit A_CallExprUnit(A_pos pos, A_fnCall callExpr);
+//A_exprUnit A_ArrayExprUnit(A_pos pos, A_arrayExpr arrayExpr);
+//A_exprUnit A_MemberExprUnit(A_pos pos, A_memberExpr memberExpr);
+//A_exprUnit A_ArithUExprUnit(A_pos pos, A_arithUExpr arithUExpr);
 ExprUnit:
-NUM{
+Num{
   $$ = A_NumExprUnit($1->pos,$1->num);
 }
 |
-ID{
+Id{
   $$ = A_IdExprUnit($1->pos,$1->id);
 }
 |
-LPAREN ArithExpr RPAREN { 
-  $$ = A_ArithExprUnit($1,$2); 
+LEFT_PARENT ArithExpr RIGHT_PARENT { 
+  $$ = A_ArithExprUnit($1,$2); //括号是Apos类型
 }
 |
 FnCall{
@@ -275,34 +284,38 @@ ArithUExpr{
 };
 
 //11
-// fnCall → id '(' ((rightVal (, rightVal)*))? ')'
+//A_fnCall A_FnCall(A_pos pos, char* fn, A_rightValList vals);
 FnCall:
-ID LPAREN RightValList RPAREN{
+Id LEFT_PARENT RightValList RIGHT_PARENT{
   $$ = A_FnCall($1->pos,$1->id,$3);
 };
 
 //12
+//A_indexExpr A_NumIndexExpr(A_pos pos, int num);
+//A_indexExpr A_IdIndexExpr(A_pos pos, char* id);
 IndexExpr:
-NUM{
+Num{
   $$ = A_NumIndexExpr($1->pos,$1->num);
 }
 |
-ID{
+Id{
   $$ = A_IdIndexExpr($1->pos,$1->id);
 };
 
-//13 
+//13 数组
+//A_arrayExpr A_ArrayExpr(A_pos pos, A_leftVal arr, A_indexExpr idx);
 ArrayExpr:
-LeftVal LEFT_BRACKET IndexExpr RIGHT_BRACKET{
+LeftVal LEFT_SQUARE_BRACKET IndexExpr RIGHT_SQUARE_BRACKET{
   $$ = A_ArrayExpr($1->pos,$1,$3);
 };
 
-//14 
+//14 member是？
 //A_memberExpr A_MemberExpr(A_pos pos, A_leftVal structId, char* memberId);
 MemberExpr:
-LeftVal DOT ID{
+LeftVal POINT Id{
   $$ = A_MemberExpr($1->pos,$1,$3->id);
 };
+
 
 //15
 //A_boolUnit A_ComExprUnit(A_pos pos, A_comExpr comExpr);
@@ -313,7 +326,7 @@ ComExpr{
   $$ = A_ComExprUnit($1->pos,$1);
 }
 |
-LPAREN BoolExpr RPAREN{
+LEFT_PARENT BoolExpr RIGHT_PARENT{
   $$ = A_BoolExprUnit($1,$2);
 }
 |
@@ -334,46 +347,43 @@ BoolExpr AND BoolExpr{
 
 //17
 //A_boolUOpExpr A_BoolUOpExpr(A_pos pos, A_boolUOp op, A_boolUnit cond);
-//BoolUOpExpr -> NOT_OPERATOR BoolExpr
 BoolUOpExpr:
 NOT BoolUnit{
   $$ = A_BoolUOpExpr($1,A_not,$2);
 };
 
-//18 
+//18 比较 分为 大于，大于等于，小于，小于等于，等于，不等于
 //A_comExpr A_ComExpr(A_pos pos, A_comOp op, A_exprUnit left, A_exprUnit right);
-// ComExpr -> ExprUnit EQ ExprUnit
-//             | ExprUnit NEQ ExprUnit
 ComExpr:
-ExprUnit GT ExprUnit{
+ExprUnit GREATER ExprUnit{
   $$ = A_ComExpr($1->pos,A_gt,$1,$3);
 }
 |
-ExprUnit LE ExprUnit{
+ExprUnit NOT_GREATER_THEN ExprUnit{
   $$ = A_ComExpr($1->pos,A_le,$1,$3);
 }
 |
-ExprUnit LT ExprUnit{
+ExprUnit LESS ExprUnit{
   $$ = A_ComExpr($1->pos,A_lt,$1,$3);
 }
 |
-ExprUnit GE ExprUnit{
+ExprUnit NOT_LESS_THEN ExprUnit{
   $$ = A_ComExpr($1->pos,A_ge,$1,$3);
 }
 |
-ExprUnit NEQ ExprUnit{
+ExprUnit NOT_EQUAL ExprUnit{
   $$ = A_ComExpr($1->pos,A_ne,$1,$3);
 }
 |
-ExprUnit EQ ExprUnit{
+ExprUnit EQUAL ExprUnit{
   $$ = A_ComExpr($1->pos,A_eq,$1,$3);
 };
 
-
-
 //19
+//A_leftVal A_IdExprLVal(A_pos pos, char* id);
+//A_leftVal A_ArrExprLVal(A_pos pos, A_arrayExpr arrExpr);
+//A_leftVal A_MemberExprLVal(A_pos pos, A_memberExpr memberExpr);
 LeftVal:
-//LeftVal -> IDENTIFIER | IndexExpr | MemberExpr
 ArrayExpr{
   $$ = A_ArrExprLVal($1->pos,$1);
 }
@@ -382,20 +392,20 @@ MemberExpr{
   $$ = A_MemberExprLVal($1->pos,$1);
 }
 |
-ID{
+Id{
   $$ = A_IdExprLVal($1->pos,$1->id);
 };
 
 
-//20 
+//20 赋值
+//A_assignStmt A_AssignStmt(A_pos pos, A_leftVal leftVal, A_rightVal rightVal);
 AssignStmt:
-//AssignStmt -> LeftVal ASSIGN RightVal SEMICOLON
 LeftVal ASSIGN RightVal SEMICOLON{
  $$ = A_AssignStmt($1->pos,$1,$3);
 };
 
-//21 
-//RightValList -> RightVal COMMA RightValList| RightVal
+//21 函数传参用到的list
+//A_rightValList A_RightValList(A_rightVal head, A_rightValList tail);
 RightValList:
 RightVal COMMA RightValList{
   $$ = A_RightValList($1,$3);
@@ -409,38 +419,53 @@ RightVal{
   $$ = NULL;
 };
 
-//22 
-//VarDefScalar -> id (':' type)? '=' rightVal
+//22 定义 var:int = 1
+//A_varDefScalar A_VarDefScalar(A_pos pos, char* id, A_type type, A_rightVal val);
 VarDefScalar:
-ID COLON Type ASSIGN RightVal{
+Id COLON Type ASSIGN RightVal{
   $$ = A_VarDefScalar($1->pos,$1->id,$3,$5);
+}
+|
+Id ASSIGN RightVal{
+  $$ = A_VarDefScalar($1->pos,$1->id,NULL,$3);
 };
 
-//23 形如qaq[1]:int = {0}
-// id '[' (id | num) ']' (':' type)? '=' '{' num '}
+//23 带数组的 比如a[1]:int = {1}
+//A_varDefArray A_VarDefArray(A_pos pos, char* id, int len, A_type type, A_rightValList vals);
 VarDefArray:
-ID LEFT_BRACKET NUM RIGHT_BRACKET COLON Type ASSIGN LBRACE RightValList RPAREN{
+Id LEFT_SQUARE_BRACKET Num RIGHT_SQUARE_BRACKET COLON Type ASSIGN LEFT_BRACE RightValList RIGHT_BRACE{
   $$ = A_VarDefArray($1->pos,$1->id,$3->num,$6,$9);
 };
 
-//24 声明，形如qaq:int
-// id (':' type)?
+//24 a:int
+//A_varDeclScalar A_VarDeclScalar(A_pos pos, char* id, A_type type);
 VarDeclScalar:
-ID COLON Type{
+Id COLON Type{
   $$ = A_VarDeclScalar($1->pos,$1->id,$3);
+}
+|
+Id {
+  $$ = A_VarDeclScalar($1->pos,$1->id,NULL);
 };
 
-//25 形如qaq[1]:int
-//id '[' (id | num) ']' (':' type)?
+//25 a[1]:int
+//A_varDeclArray A_VarDeclArray(A_pos pos, char* id, int len, A_type type);
 VarDeclArray:
-ID LEFT_BRACKET NUM RIGHT_BRACKET COLON Type{
+Id LEFT_SQUARE_BRACKET Num RIGHT_SQUARE_BRACKET COLON Type{
   $$ = A_VarDeclArray($1->pos,$1->id,$3->num,$6);
 }
+|
+Id LEFT_SQUARE_BRACKET Num RIGHT_SQUARE_BRACKET{
+  $$ = A_VarDeclArray($1->pos,$1->id,$3->num,NULL);
+};
+
+
 
 //26
+//A_varDeclStmt A_VarDeclStmt(A_pos pos, A_varDecl varDecl);
+//A_varDeclStmt A_VarDefStmt(A_pos pos, A_varDef varDef);
 //let a/a[1]:int
 //let a:int = 6
-//'let' (varDecl | varDef) ';
 VarDeclStmt:
 LET VarDecl SEMICOLON{
   $$ = A_VarDeclStmt($1,$2);
@@ -450,11 +475,11 @@ LET VarDef SEMICOLON{
   $$ = A_VarDefStmt($1,$2);
 };
 
-//27   a:int,
-//a:int,b:int 连续声明
-//VarDeclList -> VarDecl COMMA VarDeclList| VarDecl
+//27
+//A_varDeclList A_VarDeclList(A_varDecl head, A_varDeclList tail);
+//a:int,b:int
 VarDeclList:
-VarDecl COMMA VarDeclList {
+VarDecl COMMA VarDeclList{
   $$ = A_VarDeclList($1,$3);
 }
 |
@@ -463,48 +488,54 @@ VarDecl{
 }
 |
 {
-  $$ = NULL; 
+  $$ = NULL;
 };
 
 
 //28
-// 'struct' id '{' varDecl (, varDecl)* '}
+//A_structDef A_StructDef(A_pos pos, char* id, A_varDeclList varDecls);
 StructDef:
-STRUCT ID LBRACE VarDeclList RBRACE{
+STRUCT Id LEFT_BRACE VarDeclList RIGHT_BRACE{
   $$ = A_StructDef($1,$2->id,$4);
 };
 
 //29
-//参数声明
+//A_paramDecl A_ParamDecl(A_varDeclList varDecls)
 ParamDecl:
 VarDeclList{
   $$ = A_ParamDecl($1);
 };
 
 //30
-//声明函数 fn f(a:int)或者fn f(a:int)->int
-//fnDeclStmt → 'fn' fnSign ';'  fnSign → id '(' params? ')' '->' type?
+//A_fnDecl A_FnDecl(A_pos pos, char* id, A_paramDecl paramDecl, A_type type);
+//声明函数 fn f(a:int)->int
 FnDecl:
-FN ID LPAREN ParamDecl RPAREN{
+FN Id LEFT_PARENT ParamDecl RIGHT_PARENT{
   $$ = A_FnDecl($1,$2->id,$4,NULL);
 }
 |
-FN ID LPAREN ParamDecl RPAREN ARROW Type{
+FN Id LEFT_PARENT ParamDecl RIGHT_PARENT RIGHT_ARROW Type{
   $$ = A_FnDecl($1,$2->id,$4,$7);
 };
 
 //31
-// fnDef → fn fnSign codeBlock
+//A_fnDef A_FnDef(A_pos pos, A_fnDecl fnDecl, A_codeBlockStmtList stmts);
 FnDef:
-FnDecl LBRACE CodeBlockStmtList RBRACE{
+FnDecl LEFT_BRACE CodeBlockStmtList RIGHT_BRACE{
   $$ = A_FnDef($1->pos,$1,$3);
 };
 
 //32
+//A_codeBlockStmt A_BlockNullStmt(A_pos pos);
+//A_codeBlockStmt A_BlockVarDeclStmt(A_pos pos, A_varDeclStmt varDeclStmt);
+//A_codeBlockStmt A_BlockAssignStmt(A_pos pos, A_assignStmt assignStmt);
+//A_codeBlockStmt A_BlockCallStmt(A_pos pos, A_callStmt callStmt);
+//A_codeBlockStmt A_BlockIfStmt(A_pos pos, A_ifStmt ifStmt);
+//A_codeBlockStmt A_BlockWhileStmt(A_pos pos, A_whileStmt whileStmt);
+//A_codeBlockStmt A_BlockReturnStmt(A_pos pos, A_returnStmt returnStmt);
+//A_codeBlockStmt A_BlockContinueStmt(A_pos pos);
+//A_codeBlockStmt A_BlockBreakStmt(A_pos pos);
 CodeBlockStmt:
-//  codeBlock → '{' stmt* '}'
-//  stmt → varDeclStmt | assignStmt | callStmt | retStmt | ifStmt
-//  | whileStmt | breakStmt | continueStmt | ';'
 VarDeclStmt{
   $$ = A_BlockVarDeclStmt($1->pos,$1);
 }
@@ -529,7 +560,7 @@ ReturnStmt{
   $$ = A_BlockReturnStmt($1->pos,$1);
 }
 |
-CONT SEMICOLON{
+CONTINUE SEMICOLON{
   $$ = A_BlockContinueStmt($1);
 }
 |
@@ -542,39 +573,40 @@ SEMICOLON{
 };
 
 //33
-// ifStmt → 'if' '(' boolExpr ')' codeBlock (else codeBlock)?
+//A_ifStmt A_IfStmt(A_pos pos, A_boolExpr boolExpr, A_codeBlockStmtList ifStmts, A_codeBlockStmtList elseStmts);
 IfStmt:
-IF LPAREN BoolExpr RPAREN LBRACE CodeBlockStmtList RBRACE{
+IF LEFT_PARENT BoolExpr RIGHT_PARENT LEFT_BRACE CodeBlockStmtList RIGHT_BRACE{
   $$ = A_IfStmt($1,$3,$6,NULL);
 }
 |
-IF LPAREN BoolExpr RPAREN LBRACE CodeBlockStmtList RBRACE ELSE LBRACE CodeBlockStmtList RBRACE{
+IF LEFT_PARENT BoolExpr RIGHT_PARENT LEFT_BRACE CodeBlockStmtList RIGHT_BRACE ELSE LEFT_BRACE CodeBlockStmtList RIGHT_BRACE{
   $$ = A_IfStmt($1,$3,$6,$10);
 };
 
 
 //34
-// whileStmt → 'while' '(' boolExpr ')' codeBlock
+//A_whileStmt A_WhileStmt(A_pos pos, A_boolExpr boolExpr, A_codeBlockStmtList whileStmts);
 WhileStmt:
-WHILE LPAREN BoolExpr RPAREN LBRACE CodeBlockStmtList RBRACE{
+WHILE LEFT_PARENT BoolExpr RIGHT_PARENT LEFT_BRACE CodeBlockStmtList RIGHT_BRACE{
   $$ = A_WhileStmt($1,$3,$6);
 };
 
 //35
+//A_fnDeclStmt A_FnDeclStmt(A_pos pos, A_fnDecl fnDecl);
 FnDeclStmt:
 FnDecl SEMICOLON{
   $$ = A_FnDeclStmt($1->pos,$1);
 };
 
 //36
-//callStmt → fnCall ';'
+//A_callStmt A_CallStmt(A_pos pos, A_fnCall fnCall);
 CallStmt:
 FnCall SEMICOLON{
   $$ = A_CallStmt($1->pos,$1);
 };
 
 //37
-// retStmt → 'ret' rightVal? ';'
+//A_returnStmt A_ReturnStmt(A_pos pos, A_rightVal retVal);
 ReturnStmt:
 RETURN RightVal SEMICOLON{
   $$ = A_ReturnStmt($1,$2);
@@ -585,7 +617,11 @@ RETURN RightVal SEMICOLON{
 ;
 
 //38
-//program → (varDeclStmt | fnDeclStmt | fnDef | structDef | comment | ';')*
+//A_programElement A_ProgramNullStmt(A_pos pos);
+//A_programElement A_ProgramVarDeclStmt(A_pos pos, A_varDeclStmt varDeclStmt);
+//A_programElement A_ProgramStructDef(A_pos pos, A_structDef structDef);
+//A_programElement A_ProgramFnDeclStmt(A_pos pos, A_fnDeclStmt fnDecl);
+//A_programElement A_ProgramFnDef(A_pos pos, A_fnDef fnDef);
 ProgramElement:
 VarDeclStmt
 {
@@ -610,6 +646,7 @@ VarDeclStmt
 ;
 
 //39
+//A_codeBlockStmtList A_CodeBlockStmtList(A_codeBlockStmt head, A_codeBlockStmtList tail);
 CodeBlockStmtList:
 CodeBlockStmt CodeBlockStmtList{
   $$ = A_CodeBlockStmtList($1,$2);
@@ -620,6 +657,7 @@ CodeBlockStmt CodeBlockStmtList{
 }
 
 //40
+//A_programElementList A_ProgramElementList(A_programElement head, A_programElementList tail);
 ProgramElementList:
 ProgramElement ProgramElementList{
   $$ = A_ProgramElementList($1,$2);
@@ -630,16 +668,16 @@ ProgramElement ProgramElementList{
 };
 
 //41
-Program: ProgramElementList 
+//A_program A_Program(A_programElementList programElements);
+Program: 
+ProgramElementList 
 {  
   root = A_Program($1);
   $$ = A_Program($1);
-}
-;
+};
+
 
 %%
-
-
 
 extern "C"{
 void yyerror(char * s)
