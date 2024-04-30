@@ -4,6 +4,7 @@
 #include <string>
 #include <cassert>
 #include <list>
+#include <iostream>
 
 using namespace std;
 using namespace LLVMIR;
@@ -631,6 +632,7 @@ void ast2llvmBlock(aA_codeBlockStmt b,Temp_label *con_label,Temp_label *bre_labe
         case A_codeBlockStmtType::A_varDeclStmtKind:{
             ast2llvmVarDeclStmt(b->u.varDeclStmt);
         }
+        break;
         case A_codeBlockStmtType::A_assignStmtKind:{
             ast2llvmAssignStmt(b->u.assignStmt);
         }
@@ -638,47 +640,63 @@ void ast2llvmBlock(aA_codeBlockStmt b,Temp_label *con_label,Temp_label *bre_labe
         case A_codeBlockStmtType::A_callStmtKind:{
             ast2llvmCallStmt(b->u.callStmt);
         }
+        break;
         case A_codeBlockStmtType::A_ifStmtKind:{
-            ast2llvmIfStmt(b->u.ifStmt);
+            ast2llvmIfStmt(b->u.ifStmt,con_label,bre_label);
         }
+        break;
         case A_codeBlockStmtType::A_whileStmtKind:{
             ast2llvmWhileStmt(b->u.whileStmt);
         }
+        break;
         case A_codeBlockStmtType::A_returnStmtKind:{
             ast2llvmReturnStmt(b->u.returnStmt);
         }
+        break;
         case A_codeBlockStmtType::A_continueStmtKind:{
             emit_irs.push_back(L_Jump(con_label));
         }
+        break;
         case A_codeBlockStmtType::A_breakStmtKind:{
             emit_irs.push_back(L_Jump(bre_label));
         }
+        break;
+        default:
+            assert(0);
     }
     
 }
 
 AS_operand* ast2llvmRightVal(aA_rightVal r)
 {
+    if(r == nullptr){
+        return nullptr;
+    }   
     if(r->kind == A_rightValType::A_arithExprValKind){
         return ast2llvmArithExpr(r->u.arithExpr);
     }
     if(r->kind == A_rightValType::A_boolExprValKind){
         return ast2llvmBoolExpr(r->u.boolExpr);
     }
-    
+    return nullptr;
 }
 
 AS_operand* ast2llvmLeftVal(aA_leftVal l)
-{
-    if(l->kind == A_leftValType:: A_varValKind){
-         return ast2llvmVarval(*l->u.id);
+{   
+
+    if(l == nullptr){
+        return nullptr;
     }
-    else if(l->kind == A_leftValType:: A_arrValKind){
+    if(l->kind == A_leftValType:: A_varValKind){
+        return ast2llvmVarval(*l->u.id);
+    }
+    else if(l->kind == A_leftValType:: A_arrValKind){  //a.b[1]
         return ast2llvmArrayExpr(l->u.arrExpr);
     }
-    else if(l->kind == A_leftValType::A_memberValKind){
+    else if(l->kind == A_leftValType::A_memberValKind){ //a[1].b
         return ast2llvmMemberExpr(l->u.memberExpr);
     }
+    return nullptr;
 }
 
 AS_operand* ast2llvmIndexExpr(aA_indexExpr index)
@@ -693,16 +711,52 @@ AS_operand* ast2llvmIndexExpr(aA_indexExpr index)
          emit_irs.emplace_back(L_Load(temp_val, temp_ptr));
         return temp_val;
     }
+    return nullptr;
 }
 
 AS_operand* ast2llvmBoolExpr(aA_boolExpr b,Temp_label *true_label,Temp_label *false_label)
 {
+    bool should_return = false;
+    AS_operand *stackPtr = nullptr;
+    if (true_label == nullptr || false_label == nullptr)
+    {
+        true_label = Temp_newlabel();
+        false_label = Temp_newlabel();
+        should_return = true;
+        stackPtr = AS_Operand_Temp(Temp_newtemp_int_ptr(0));
+
+        // ir: alloca
+        emit_irs.push_back(L_Alloca(stackPtr));
+    }
     if (b->kind == A_boolExprType::A_boolBiOpExprKind) {
         ast2llvmBoolBiOpExpr(b->u.boolBiOpExpr, true_label, false_label);
     } 
     else if (b->kind == A_boolExprType::A_boolUnitKind) {
         ast2llvmBoolUnit(b->u.boolUnit, true_label, false_label);
-    } 
+    }
+     if (should_return)
+    {
+        auto temp = AS_Operand_Temp(Temp_newtemp_int());
+        auto end_label = Temp_newlabel();
+
+        // ir: move true
+        emit_irs.push_back(L_Label(true_label));
+        emit_irs.push_back(L_Store(AS_Operand_Const(1), stackPtr));
+        emit_irs.push_back(L_Jump(end_label));
+
+        // ir: move false
+        emit_irs.push_back(L_Label(false_label));
+        emit_irs.push_back(L_Store(AS_Operand_Const(0), stackPtr));
+        emit_irs.push_back(L_Jump(end_label));
+
+        // ir: end
+        emit_irs.push_back(L_Label(end_label));
+        emit_irs.push_back(L_Load(temp, stackPtr));
+
+        return temp;
+    }
+
+    return nullptr;
 }
 
 void ast2llvmBoolBiOpExpr(aA_boolBiOpExpr b,Temp_label *true_label,Temp_label *false_label)
@@ -719,12 +773,12 @@ void ast2llvmBoolBiOpExpr(aA_boolBiOpExpr b,Temp_label *true_label,Temp_label *f
         ast2llvmBoolExpr(b->left, true_label, orFalseLabel);
         emit_irs.push_back(L_Label(orFalseLabel));
         ast2llvmBoolExpr(b->right, true_label, false_label);
-
     }
 }
 
 void ast2llvmBoolUnit(aA_boolUnit b,Temp_label *true_label,Temp_label *false_label)
 {
+
     if (b->kind == A_boolUnitType::A_boolExprKind) {
         ast2llvmBoolExpr(b->u.boolExpr, true_label, false_label);
     } 
@@ -737,7 +791,7 @@ void ast2llvmBoolUnit(aA_boolUnit b,Temp_label *true_label,Temp_label *false_lab
 }
 
 void ast2llvmComOpExpr(aA_comExpr c,Temp_label *true_label,Temp_label *false_label)
-{   
+{  
     auto l = ast2llvmExprUnit(c->left);
     auto r = ast2llvmExprUnit(c->right);
     auto dst = AS_Operand_Temp(Temp_newtemp_int());
@@ -776,31 +830,135 @@ void ast2llvmComOpExpr(aA_comExpr c,Temp_label *true_label,Temp_label *false_lab
     default:
         break;
     }
+    
+    emit_irs.push_back(L_Cjump(dst, true_label, false_label));
 }
 
 AS_operand* ast2llvmArithBiOpExpr(aA_arithBiOpExpr a)
 {
-    
+    auto left = ast2llvmArithExpr(a->left);
+    auto right = ast2llvmArithExpr(a->right);
+    auto dst = AS_Operand_Temp(Temp_newtemp_int());
+    switch (a->op) {
+    case A_arithBiOp::A_add:
+      emit_irs.emplace_back(L_Binop(L_binopKind::T_plus, left, right, dst));
+      break;
+    case A_arithBiOp::A_div:
+      emit_irs.emplace_back(L_Binop(L_binopKind::T_div, left, right, dst));
+      break;
+    case A_arithBiOp::A_mul:
+      emit_irs.emplace_back(L_Binop(L_binopKind::T_mul, left, right, dst));
+      break;
+    case A_arithBiOp::A_sub:
+      emit_irs.emplace_back(L_Binop(L_binopKind::T_minus, left, right, dst));
+      break;
+    default:
+      assert(0);
+      break;
+  }
+  return dst;
 }
 
 AS_operand* ast2llvmArithUExpr(aA_arithUExpr a)
 {
-    
+    auto left = AS_Operand_Const(0);
+    auto right = ast2llvmExprUnit(a->expr);
+    auto dst = AS_Operand_Temp(Temp_newtemp_int());
+    emit_irs.emplace_back(L_Binop(L_binopKind::T_minus, left, right, dst));
+    return dst;
 }
 
 AS_operand* ast2llvmArithExpr(aA_arithExpr a)
 {
-    
+    if(a->kind == A_arithExprType::A_arithBiOpExprKind)
+    {
+        return ast2llvmArithBiOpExpr(a->u.arithBiOpExpr);
+    }
+    else if(a->kind == A_arithExprType::A_exprUnitKind)
+    {
+        return ast2llvmExprUnit(a->u.exprUnit);
+    }
 }
 
-AS_operand* ast2llvmExprUnit(aA_exprUnit e)
-{
-    
+AS_operand* ast2llvmExprUnit(aA_exprUnit a)
+{ 
+    if(a->kind ==A_exprUnitType::A_numExprKind){
+        return AS_Operand_Const(a->u.num);
+    }
+    if(a->kind == A_exprUnitType::A_arithExprKind){
+        return ast2llvmArithExpr(a->u.arithExpr);
+    }
+    if(a->kind == A_exprUnitType::A_arithUExprKind){
+        return ast2llvmArithUExpr(a->u.arithUExpr);
+    }
+    if(a->kind == A_exprUnitType::A_arrayExprKind){
+        auto arrayptr=  ast2llvmArrayExpr(a->u.arrayExpr);
+        auto res = AS_Operand_Temp(Temp_newtemp_int());
+        emit_irs.push_back(L_Load(res, arrayptr));
+        return res;
+    }
+    if(a->kind == A_exprUnitType::A_memberExprKind){
+        auto memberptr = ast2llvmMemberExpr(a->u.memberExpr);
+        auto res = AS_Operand_Temp(Temp_newtemp_int());
+        emit_irs.push_back(L_Load(res, memberptr));
+        return res;
+    }
+    if(a->kind == A_exprUnitType::A_idExprKind){
+        auto temp_ptr =  ast2llvmVarval(*a->u.id);
+        if (temp_ptr->kind == OperandKind::TEMP &&temp_ptr->u.TEMP->type == TempType::INT_PTR &&temp_ptr->u.TEMP->len == 0){
+            auto val_dst_operand = AS_Operand_Temp(Temp_newtemp_int());
+            emit_irs.emplace_back(L_Load(val_dst_operand, temp_ptr));
+            return val_dst_operand;
+        } 
+        else if (temp_ptr->kind == OperandKind::NAME &&temp_ptr->u.NAME->type == TempType::INT_TEMP) {// 全局变量int
+                auto val_dst_operand = AS_Operand_Temp(Temp_newtemp_int());
+                emit_irs.emplace_back(L_Load(val_dst_operand, temp_ptr));
+            return val_dst_operand;
+        }
+        else if (temp_ptr->kind == OperandKind::ICONST) {
+            return temp_ptr;
+        } 
+        else {
+            return temp_ptr;   
+        }
+    }
+    if(a->kind == A_exprUnitType::A_fnCallKind){
+        auto callExpr = a->u.callExpr;
+        std::vector<AS_operand *> args;
+        for (auto &arg : callExpr->vals){
+            args.push_back(ast2llvmRightVal(arg));
+        }
+        auto res = Temp_newtemp_int();
+        emit_irs.push_back(L_Call(*callExpr->fn, AS_Operand_Temp(res), args));
+        return AS_Operand_Temp(res);
+    }
 }
 
 LLVMIR::L_func* ast2llvmFuncBlock(Func_local *f)
 {
-    
+    std::list<L_stm *> instrs;
+    std::list<L_block *> blocks;
+
+    for (const auto &i : f->irs)
+    {
+        if (i->type == L_StmKind::T_LABEL)
+        {
+            if (!instrs.empty())
+            {
+                blocks.push_back(L_Block(instrs));
+                instrs.clear();
+            }
+        }
+
+        instrs.push_back(i);
+    }
+
+    if (!instrs.empty())
+    {
+        blocks.push_back(L_Block(instrs));
+    }
+
+    return new LLVMIR::L_func(f->name, f->ret, f->args, blocks);
 }
 
 void ast2llvm_moveAlloca(LLVMIR::L_func *f)
@@ -928,7 +1086,14 @@ void ast2llvmCallStmt(aA_callStmt a){  //这里的callStmt没有左值，鉴定�
 void ast2llvmIfStmt(aA_ifStmt a , Temp_label *con_label, Temp_label *bre_label){
     auto true_label = Temp_newlabel();
     auto false_label = Temp_newlabel();
-    auto end_label = Temp_newlabel();
+    Temp_label* end_label;
+    if(!a->elseStmts.empty()){
+        end_label = Temp_newlabel();
+
+    }
+    else{
+        end_label = false_label;
+    }
     auto cond = ast2llvmBoolExpr(a->boolExpr, true_label, false_label);
     emit_irs.emplace_back(L_Label(true_label)); //ture的语句紧跟在下面 不需要jump
     for (auto stmt : a->ifStmts) {
@@ -948,14 +1113,14 @@ void ast2llvmIfStmt(aA_ifStmt a , Temp_label *con_label, Temp_label *bre_label){
 }
 
 void ast2llvmWhileStmt(aA_whileStmt a){
+    auto test_label = Temp_newlabel();
     auto ture_label = Temp_newlabel();
     auto false_label = Temp_newlabel();
-    auto test_label = Temp_newlabel();
     emit_irs.push_back(L_Jump(test_label));
     emit_irs.push_back(L_Label(test_label));
     auto cond = ast2llvmBoolExpr(a->boolExpr, ture_label, false_label);
-
     emit_irs.push_back(L_Label(ture_label));
+    bool ifwhileret_stat =false;
     for (auto stmt : a->whileStmts) {
         ast2llvmBlock(stmt, test_label, false_label);
     }
@@ -988,24 +1153,27 @@ AS_operand *ast2llvmVarval(string id) {
 
 AS_operand *ast2llvmArrayExpr(aA_arrayExpr a){
     AS_operand *array_expr = ast2llvmLeftVal(a->arr);
+
     AS_operand *index = ast2llvmIndexExpr(a->idx);
     AS_operand *newPtr = nullptr;
+
     if(array_expr->kind == OperandKind::TEMP){
         if(array_expr->u.TEMP->type == TempType::INT_PTR){
-            newPtr = AS_Operand_Temp(Temp_newtemp_int_ptr(0));
+            newPtr = AS_Operand_Temp(Temp_newtemp_int_ptr(array_expr->u.TEMP->len));
         }
         if(array_expr->u.TEMP->type == TempType::STRUCT_PTR){
-            newPtr = AS_Operand_Temp(Temp_newtemp_struct_ptr(0, array_expr->u.TEMP->structname));
+            newPtr = AS_Operand_Temp(Temp_newtemp_struct_ptr(array_expr->u.TEMP->len, array_expr->u.TEMP->structname));
         }
         emit_irs.emplace_back(L_Gep(newPtr, array_expr, index));
         return newPtr;
     }
     if(array_expr->kind == OperandKind::NAME){
+        auto name = array_expr->u.NAME;
         if(array_expr->u.NAME->type == TempType::INT_PTR){
-            newPtr = AS_Operand_Name(Name_newname_int_ptr(Temp_newlabel(), array_expr->u.NAME->len));
+            newPtr = AS_Operand_Temp(Temp_newtemp_int_ptr(name->len));
         }
         if(array_expr->u.NAME->type == TempType::STRUCT_PTR){
-            newPtr = AS_Operand_Name(Name_newname_struct_ptr(Temp_newlabel(), array_expr->u.NAME->len, array_expr->u.NAME->structname));
+            newPtr = AS_Operand_Temp( Temp_newtemp_struct_ptr(name->len, name->structname));
         }
         emit_irs.emplace_back(L_Gep(newPtr, array_expr, index));
         return newPtr;
@@ -1015,6 +1183,22 @@ AS_operand *ast2llvmArrayExpr(aA_arrayExpr a){
 
 AS_operand *ast2llvmMemberExpr(aA_memberExpr a){
     AS_operand* struct_expr = ast2llvmLeftVal(a->structId);
+    //  switch(struct_expr->kind){
+    //     case OperandKind::TEMP:
+    //         printf("TEMPnum: %d\n",struct_expr->u.TEMP->num);
+    //         std::cout << "TEMPname: " << struct_expr->u.TEMP->structname << std::endl;
+    //         std::cout << "TEMPLEN: " << struct_expr->u.TEMP->len<< std::endl;
+    //         if(struct_expr->u.TEMP->type == TempType::INT_TEMP){
+    //             printf("TEMPtype: INT_TEMP\n");
+    //         }else if(struct_expr->u.TEMP->type == TempType::INT_PTR){
+    //             printf("TEMPtype: INT_PTR\n");
+    //         }else if(struct_expr->u.TEMP->type == TempType::STRUCT_TEMP){
+    //             printf("TEMPtype: STRUCT_TEMP\n");
+    //         }else if(struct_expr->u.TEMP->type == TempType::STRUCT_PTR){
+    //             printf("TEMPtype: STRUCT_PTR\n");
+    //         }
+    //         break;
+    // }
     AS_operand* newPtr = nullptr;
     string memberName = *a->memberId;
     string structName;

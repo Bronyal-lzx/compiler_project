@@ -1,8 +1,8 @@
 CXX = clang++-17
-CXXFLAGS = -std=c++17 -g
+CXXFLAGS = -std=c++17 -g 
 
 TESTCASE_DIR := tests
-TESTCASES = $(wildcard $(TESTCASE_DIR)/*.tea)
+TESTCASES = $(sort $(wildcard $(TESTCASE_DIR)/*.tea))
 LLFILES = $(patsubst $(TESTCASE_DIR)/%.tea,$(TESTCASE_DIR)/%.ast,$(TESTCASES))
 
 .SECONDARY: $(LLFILES)

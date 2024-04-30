@@ -70,7 +70,7 @@ struct AS_operand
         Name_name *NAME;
         int ICONST;
     } u;
-};
+};  
 
 AS_operand* AS_Operand_Temp(Temp_temp *temp);
 AS_operand* AS_Operand_Name(Name_name *name);
