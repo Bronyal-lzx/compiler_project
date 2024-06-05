@@ -21,17 +21,16 @@ struct useDef {
   TempSet_ def;
 };
 
-static unordered_map<GRAPH::Node<LLVMIR::L_block*>*, inOut> InOutTable;
-static unordered_map<GRAPH::Node<LLVMIR::L_block*>*, useDef> UseDefTable;
+static unordered_map<GRAPH::Node<LLVMIR::L_block *> *, inOut> InOutTable;
+static unordered_map<GRAPH::Node<LLVMIR::L_block *> *, useDef> UseDefTable;
 
-list<AS_operand**> get_all_AS_operand(L_stm* stm) {
-  list<AS_operand**> AS_operand_list;
+list<AS_operand **> get_all_AS_operand(L_stm *stm) {
+  list<AS_operand **> AS_operand_list;
   switch (stm->type) {
     case L_StmKind::T_BINOP: {
       AS_operand_list.push_back(&(stm->u.BINOP->left));
       AS_operand_list.push_back(&(stm->u.BINOP->right));
       AS_operand_list.push_back(&(stm->u.BINOP->dst));
-
     } break;
     case L_StmKind::T_LOAD: {
       AS_operand_list.push_back(&(stm->u.LOAD->dst));
@@ -59,12 +58,12 @@ list<AS_operand**> get_all_AS_operand(L_stm* stm) {
     } break;
     case L_StmKind::T_CALL: {
       AS_operand_list.push_back(&(stm->u.CALL->res));
-      for (auto& arg : stm->u.CALL->args) {
+      for (auto &arg : stm->u.CALL->args) {
         AS_operand_list.push_back(&arg);
       }
     } break;
     case L_StmKind::T_VOID_CALL: {
-      for (auto& arg : stm->u.VOID_CALL->args) {
+      for (auto &arg : stm->u.VOID_CALL->args) {
         AS_operand_list.push_back(&arg);
       }
     } break;
@@ -74,7 +73,7 @@ list<AS_operand**> get_all_AS_operand(L_stm* stm) {
     } break;
     case L_StmKind::T_PHI: {
       AS_operand_list.push_back(&(stm->u.PHI->dst));
-      for (auto& phi : stm->u.PHI->phis) {
+      for (auto &phi : stm->u.PHI->phis) {
         AS_operand_list.push_back(&(phi.first));
       }
     } break;
@@ -94,12 +93,12 @@ list<AS_operand**> get_all_AS_operand(L_stm* stm) {
   return AS_operand_list;
 }
 
-std::list<AS_operand**> get_def_operand(L_stm* stm) {
-  list<AS_operand**> AS_operand_list;
+std::list<AS_operand **> get_def_operand(L_stm *stm) {
+  //   Todo
+  list<AS_operand **> AS_operand_list;
   switch (stm->type) {
     case L_StmKind::T_BINOP: {
       AS_operand_list.push_back(&(stm->u.BINOP->dst));
-
     } break;
     case L_StmKind::T_LOAD: {
       AS_operand_list.push_back(&(stm->u.LOAD->dst));
@@ -139,23 +138,22 @@ std::list<AS_operand**> get_def_operand(L_stm* stm) {
   }
   return AS_operand_list;
 }
-list<Temp_temp*> get_def_temp(L_stm* stm) {
+list<Temp_temp *> get_def(L_stm *stm) {  // 临时变量
   auto AS_operand_list = get_def_operand(stm);
-  list<Temp_temp*> Temp_list;
+  list<Temp_temp *> Temp_list;
   for (auto AS_op : AS_operand_list) {
-    if ((*AS_op)->kind == OperandKind::TEMP)
-      Temp_list.push_back((*AS_op)->u.TEMP);
+    Temp_list.push_back((*AS_op)->u.TEMP);
   }
   return Temp_list;
 }
 
-std::list<AS_operand**> get_use_operand(L_stm* stm) {
-  list<AS_operand**> AS_operand_list;
+std::list<AS_operand **> get_use_operand(L_stm *stm) {
+  //   Todo
+  list<AS_operand **> AS_operand_list;
   switch (stm->type) {
     case L_StmKind::T_BINOP: {
       AS_operand_list.push_back(&(stm->u.BINOP->left));
       AS_operand_list.push_back(&(stm->u.BINOP->right));
-
     } break;
     case L_StmKind::T_LOAD: {
     } break;
@@ -177,12 +175,12 @@ std::list<AS_operand**> get_use_operand(L_stm* stm) {
       AS_operand_list.push_back(&(stm->u.MOVE->src));
     } break;
     case L_StmKind::T_CALL: {
-      for (auto& arg : stm->u.CALL->args) {
+      for (auto &arg : stm->u.CALL->args) {
         AS_operand_list.push_back(&arg);
       }
     } break;
     case L_StmKind::T_VOID_CALL: {
-      for (auto& arg : stm->u.VOID_CALL->args) {
+      for (auto &arg : stm->u.VOID_CALL->args) {
         AS_operand_list.push_back(&arg);
       }
     } break;
@@ -191,7 +189,7 @@ std::list<AS_operand**> get_use_operand(L_stm* stm) {
         AS_operand_list.push_back(&(stm->u.RET->ret));
     } break;
     case L_StmKind::T_PHI: {
-      for (auto& phi : stm->u.PHI->phis) {
+      for (auto &phi : stm->u.PHI->phis) {
         AS_operand_list.push_back(&(phi.first));
       }
     } break;
@@ -208,12 +206,11 @@ std::list<AS_operand**> get_use_operand(L_stm* stm) {
   return AS_operand_list;
 }
 
-list<Temp_temp*> get_use_temp(L_stm* stm) {
+list<Temp_temp *> get_use(L_stm *stm) {
   auto AS_operand_list = get_use_operand(stm);
-  list<Temp_temp*> Temp_list;
+  list<Temp_temp *> Temp_list;
   for (auto AS_op : AS_operand_list) {
-    if ((*AS_op)->kind == OperandKind::TEMP)
-      Temp_list.push_back((*AS_op)->u.TEMP);
+    Temp_list.push_back((*AS_op)->u.TEMP);
   }
   return Temp_list;
 }
@@ -223,97 +220,82 @@ static void init_INOUT() {
   UseDefTable.clear();
 }
 
-TempSet_& FG_Out(GRAPH::Node<LLVMIR::L_block*>* r) { return InOutTable[r].out; }
-TempSet_& FG_In(GRAPH::Node<LLVMIR::L_block*>* r) { return InOutTable[r].in; }
-TempSet_& FG_def(GRAPH::Node<LLVMIR::L_block*>* r) {
+TempSet_ &FG_Out(GRAPH::Node<LLVMIR::L_block *> *r) {
+  return InOutTable[r].out;
+}
+TempSet_ &FG_In(GRAPH::Node<LLVMIR::L_block *> *r) { return InOutTable[r].in; }
+TempSet_ &FG_def(GRAPH::Node<LLVMIR::L_block *> *r) {
   return UseDefTable[r].def;
 }
-TempSet_& FG_use(GRAPH::Node<LLVMIR::L_block*>* r) {
+TempSet_ &FG_use(GRAPH::Node<LLVMIR::L_block *> *r) {
   return UseDefTable[r].use;
 }
 
-static void Use_def(GRAPH::Node<LLVMIR::L_block*>* r,
-                    GRAPH::Graph<LLVMIR::L_block*>& bg,
-                    std::vector<Temp_temp*>& args) {
-  static const int Use_def_magic = 101;
-  r->color = Use_def_magic;
-
-  if (r->mykey == 0) {
-    for (auto temp_ptr : args) {
-      if (temp_ptr->type == TempType::INT_TEMP)
-        TempSet_add(&UseDefTable[r].def, temp_ptr);
-    }
-  }
-
-  for (auto s : r->info->instrs) {
-    auto stmt_use = get_use_temp(s);
-    for (auto temp_ptr : stmt_use) {
-      if (temp_ptr->type != TempType::INT_TEMP) {
-        continue;
+static void Use_def(GRAPH::Node<LLVMIR::L_block *> *r,
+                    GRAPH::Graph<LLVMIR::L_block *> &bg,
+                    std::vector<Temp_temp *> &args) {
+  //    Todo
+  for (const auto [key, node] : bg.mynodes) {
+    auto& def = FG_def(node);
+    auto& use = FG_use(node);
+    def.clear();
+    use.clear();
+    for( auto stm : node->info->instrs){
+      auto def_temp = get_def(stm);
+      auto use_temp = get_use(stm);
+      for (auto temp : use_temp) {
+        if (def.find(temp) == def.end())
+            use.insert(temp);
       }
-
-      if (!TempSet_contains(&UseDefTable[r].def, temp_ptr)) {
-        TempSet_add(&UseDefTable[r].use, temp_ptr);
-      }
-    }
-    auto stmt_def = get_def_temp(s);
-    for (auto temp_ptr : stmt_def) {
-      if (temp_ptr->type == TempType::INT_TEMP)
-        TempSet_add(&UseDefTable[r].def, temp_ptr);
-    }
-  }
-
-  InOutTable[r].in = UseDefTable[r].use;
-  for (auto succ_count : r->succs) {
-    auto succ_node = bg.mynodes[succ_count];
-    if (succ_node->color != Use_def_magic) {
-      Use_def(succ_node, bg, args);
+      def.insert(def_temp.begin(), def_temp.end());
     }
   }
 }
 static int gi = 0;
-static bool LivenessIteration(GRAPH::Node<LLVMIR::L_block*>* r,
-                              GRAPH::Graph<LLVMIR::L_block*>& bg) {
-  static const int LivenessIteration_maigc = 102;
-  bool ret = false;
-  r->color = LivenessIteration_maigc;
-  for (auto succ_count : r->succs) {
-    auto succ_node = bg.mynodes[succ_count];
-    if (succ_node->color != LivenessIteration_maigc) {
-      ret = ret | LivenessIteration(succ_node, bg);
+static bool LivenessIteration(GRAPH::Node<LLVMIR::L_block *> *r,
+                              GRAPH::Graph<LLVMIR::L_block *> &bg) {  
+  //    Todo
+  //计算每个块in，out
+  bool changed = false;
+  for (auto it = bg.mynodes.rbegin(); it != bg.mynodes.rend(); it++) {
+    auto node = it->second;
+    auto& old_in = InOutTable[node].in;
+    auto& old_out = InOutTable[node].out;
+    auto& def = UseDefTable[node].def;
+    auto& use = UseDefTable[node].use;
+    // out[n]=\bigcup_{s\in succ[n]}in[s]\end{aligned}
+    TempSet_ new_out{};
+    for (auto succ : node->succs) { 
+            auto succ_in = FG_In(bg.mynodes[succ]);
+            new_out.insert(succ_in.begin(), succ_in.end());
+    }
+
+    //in[n]=use[n]\cup(out[n]-def[n])
+    TempSet_ new_in = old_out;
+    for (auto temp : def) {
+            new_in.erase(temp);
+    }
+    new_in.insert(use.begin(), use.end());
+    if (old_in != new_in || old_out != new_out) {
+        changed = true;
+        old_in = new_in;
+        old_out = new_out;   
     }
   }
-
-  for (auto succ_count : r->succs) {
-    auto succ_node = bg.mynodes[succ_count];
-    for (auto succ_in : InOutTable[succ_node].in) {
-      if (!TempSet_contains(&InOutTable[r].out, succ_in)) {
-        TempSet_add(&InOutTable[r].out, succ_in);
-        ret = true;
-      }
-    }
-  }
-
-  auto set_diff = TempSet_diff(&InOutTable[r].out, &UseDefTable[r].def);
-  auto set_union = TempSet_union(&UseDefTable[r].use, set_diff);
-  InOutTable[r].in = *set_union;
-  delete set_diff;
-  delete set_union;
-
-  return ret;
+  return changed;
 }
 
-void PrintTemps(FILE* out, TempSet set) {
+void PrintTemps(FILE *out, TempSet set) {
   for (auto x : *set) {
-    fprintf(out, "%d  ", x->num);
+    printf("%d  ", x->num);
   }
 }
 
-void Show_Liveness(FILE* out, GRAPH::Graph<LLVMIR::L_block*>& bg) {
+void Show_Liveness(FILE *out, GRAPH::Graph<LLVMIR::L_block *> &bg) {
   fprintf(out, "\n\nNumber of iterations=%d\n\n", gi);
   for (auto block_node : bg.mynodes) {
     fprintf(out, "----------------------\n");
-    fprintf(out, "block %s \n", block_node.second->info->label->name.c_str());
+    printf("block %s \n", block_node.second->info->label->name.c_str());
     fprintf(out, "def=\n");
     PrintTemps(out, &FG_def(block_node.second));
     fprintf(out, "\n");
@@ -328,23 +310,16 @@ void Show_Liveness(FILE* out, GRAPH::Graph<LLVMIR::L_block*>& bg) {
     fprintf(out, "\n");
   }
 }
-
-void Liveness(GRAPH::Node<LLVMIR::L_block*>* r,
-              GRAPH::Graph<LLVMIR::L_block*>& bg,
-              std::vector<Temp_temp*>& args) {
+// 以block为单位
+void Liveness(GRAPH::Node<LLVMIR::L_block *> *r,
+              GRAPH::Graph<LLVMIR::L_block *> &bg,
+              std::vector<Temp_temp *> &args) {
   init_INOUT();
   Use_def(r, bg, args);
   gi = 0;
   bool changed = true;
-  while (changed) {
-    gi++;
-    clearGraphColor(bg);
+  while (changed){
     changed = LivenessIteration(r, bg);
   }
 }
 
-void clearGraphColor(GRAPH::Graph<LLVMIR::L_block*>& bg) {
-  for (int i = 0; i < bg.nodecount; i++) {
-    bg.mynodes[i]->color = 0;
-  }
-}
